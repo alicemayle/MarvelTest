@@ -8,4 +8,7 @@ public final class Constants {
 	public static final String CREATOR_WRITER = "writer";
 	public static final String CREATOR_COLORIST = "colorist";
 	
+	public static final String HERO_CAPAMERICA = "capamerica";
+	public static final String HERO_IRONMAN = "ironman";
+	
 }

@@ -117,7 +117,7 @@ public class MarvelService {
 	}
 
 	public void syncLibrary(String uuid) throws JsonProcessingException, InternalException {
-		syncCharacter(uuid, ironman);
+//		syncCharacter(uuid, ironman);
 		syncCharacter(uuid, capamerica);
 	}
 	
@@ -125,6 +125,11 @@ public class MarvelService {
 		ResponseEntity<Object> responseTmpCharacter;
 		ResponseCharactersExternal responseExternal;
 		Integer offset = 0;
+		String heroIdentifier;
+		
+		if (hero.equals(ironman))
+			heroIdentifier = Constants.HERO_IRONMAN;
+		else heroIdentifier = Constants.HERO_CAPAMERICA;
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -149,14 +154,14 @@ public class MarvelService {
 			});
 			
 			for(Integer i = 0; i<= character.getComics().getAvailable(); i=i+Constants.LIMIT) {
-				syncCharacterComics(uuid, character, hero, i);
+				syncCharacterComics(uuid, character, heroIdentifier, i);
 				offset = i;
 			}
 			
 			if (character.getComics().getAvailable() % 100 > 0)
-				syncCharacterComics(uuid, character, hero, offset + (character.getComics().getAvailable() % 100));
+				syncCharacterComics(uuid, character, heroIdentifier, offset + (character.getComics().getAvailable() % 100));
 			
-			updateHero(uuid, hero, character.getId());
+			updateHero(uuid, heroIdentifier, character.getId());
 			
 		} catch (HttpClientErrorException | HttpServerErrorException e) {
 			
@@ -219,7 +224,7 @@ public class MarvelService {
 					creator = creators.get(0);
 				}
 				
-				creator.setHero(hero.replaceAll("\\s+","").toLowerCase());
+				creator.setHero(hero);
 				creator.setName(itemCreator.getName());
 				creator.setDescriptionRole(itemCreator.getRole());
 				
@@ -235,9 +240,7 @@ public class MarvelService {
 		}	
 	}
 	
-	private void saveCharactersComics(String uuid, String hero, List<ComicExternal> comics) {
-		String heroIdentifier = hero.replaceAll("\\s+","").toLowerCase();
-		
+	private void saveCharactersComics(String uuid, String hero, List<ComicExternal> comics) {		
 		for (ComicExternal comic : comics) {
 			for (ItemCharacterExternal itemCharacter : comic.getCharacters().getItems()) {
 				CharacterComic character = new CharacterComic();
@@ -245,9 +248,9 @@ public class MarvelService {
 				String[] parts = itemCharacter.getResourceURI().split("/");
 				Integer idCharacter = Integer.parseInt(parts[parts.length -1]);
 				
-				List<CharacterComic> charactersComic = characterComicRepository.findByIdCharacterIdComicHero(idCharacter, comic.getId(), heroIdentifier);
+				List<CharacterComic> charactersComic = characterComicRepository.findByIdCharacterIdComicHero(idCharacter, comic.getId(), hero);
 				if(charactersComic.isEmpty()) {
-					character.setHero(heroIdentifier);
+					character.setHero(hero);
 					character.setIdCharacter(idCharacter);
 					character.setIdComic(comic.getId());
 				} else {
@@ -263,13 +266,13 @@ public class MarvelService {
 	}
 	
 	private void updateHero(String uuid, String hero, Integer idCharacter) {
-		Hero heroSave = heroRepository.findByHero(hero.replaceAll("\\s+","").toLowerCase());
+		Hero heroSave = heroRepository.findByHero(hero);
 		if (heroSave != null) {
 			heroSave.setLastSync(LocalDateTime.now());
 			heroRepository.save(heroSave);
 		} else {
 			Hero newHero = new Hero();
-			newHero.setHero(hero.replaceAll("\\s+","").toLowerCase());
+			newHero.setHero(hero);
 			newHero.setIdCharacter(idCharacter);
 			newHero.setLastSync(LocalDateTime.now());
 			newHero.setName(hero);
